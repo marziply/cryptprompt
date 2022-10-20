@@ -18,12 +18,20 @@ struct Prompt {
   int y;
   int x;
   WINDOW *win;
+  WINDOW *input;
   struct State *state;
 };
 
 void paint_prompt(struct Prompt *p) {
+  int len = strlen(p->state->password);
+
   wbkgd(p->win, COLOR_PAIR(1));
+  wbkgd(p->input, COLOR_PAIR(2));
+
+  mvwaddstr(p->win, 1, 1, "Enter password");
+
   wrefresh(p->win);
+  wrefresh(p->input);
 }
 
 void handle_exit(struct State *s) {
@@ -59,7 +67,7 @@ void handle_key(struct Prompt *p, int key) {
     break;
   default:
     if (len < MAX_PASSWORD_LEN && key >= MIN_CHAR && key <= MAX_CHAR) {
-      waddch(p->win, '*');
+      waddch(p->input, '*');
       strncat(p->state->password, (char *) &key, 1);
     }
   }
@@ -69,6 +77,7 @@ void init() {
   initscr();
   start_color();
   init_pair(1, COLOR_BLACK, COLOR_WHITE);
+  init_pair(2, COLOR_RED, COLOR_WHITE);
   noecho();
   cbreak();
   intrflush(stdscr, false);
@@ -84,15 +93,18 @@ int main(int, char **) {
     (LINES / 2) - (PROMPT_H / 2),
     (COLS / 2) - (PROMPT_W / 2),
     subwin(stdscr, PROMPT_H, PROMPT_W, prompt.y, prompt.x),
+    derwin(prompt.win, 1, PROMPT_W - 1, 2, 1),
     &state
   };
 
   // Password prompt title
-  mvwaddstr(prompt.win, 1, 1, "Enter password");
+  /* wbkgd(prompt.win, COLOR_PAIR(1)); */
+  /* mvwaddstr(prompt.win, 1, 1, "Enter password"); */
+  /* wrefresh(prompt.win); */
   // Move to prompt window (center of screen)
   move(prompt.y + 2, prompt.x + 1);
   // Move cursor to input within prompt window
-  wmove(prompt.win, 2, 1);
+  /* wmove(prompt.win, 2, 1); */
 
   while (state.running) {
     paint_prompt(&prompt);
