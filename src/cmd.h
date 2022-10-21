@@ -4,6 +4,7 @@
 
 #define MIN_CHAR 32
 #define MAX_CHAR 126
+#define MAX_PASSWORD_LEN 80
 
 static const chtype BULLET = '*';
 

@@ -4,7 +4,6 @@
 
 #define PROMPT_H 4
 #define PROMPT_W 64
-#define MAX_PASSWORD_LEN 80
 
 typedef struct Prompt Prompt;
 
