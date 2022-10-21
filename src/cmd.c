@@ -45,10 +45,6 @@ void add_key(WINDOW *input, struct Password *pw, char *key) {
 
 void handle_key(Command *c, int key) {
   switch (key) {
-  // ESC
-  case 27:
-    c->running = false;
-    break;
   case 10:
   case 13:
   case KEY_ENTER:
