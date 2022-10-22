@@ -30,7 +30,7 @@ int main(int, char **) {
 
   endwin();
 
-  printf("%s\n", cmd.password.value);
+  printf("%s\n", cmd.prompt.password.value);
 
   return 0;
 }
