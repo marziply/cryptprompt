@@ -1,7 +1,7 @@
 #include "prompt.h"
 
-Prompt new_prompt() {
-  Prompt p = (Prompt) {
+prompt_t new_prompt() {
+  prompt_t p = (prompt_t) {
     (COLS / 2) - (PROMPT_W / 2),
     (LINES / 2) - (PROMPT_H / 2),
     subwin(stdscr, PROMPT_H, PROMPT_W, p.y, p.x),
@@ -15,7 +15,7 @@ Prompt new_prompt() {
   return p;
 }
 
-void paint_prompt(Prompt *p) {
+void paint_prompt(prompt_t *p) {
   // Red foreground colour if max password length is reached
   /* int color_id = p->state->len == MAX_PASSWORD_LEN ? 2 : 1; */
 

@@ -24,7 +24,7 @@ void init() {
 int main(int, char **) {
   init();
 
-  Command cmd = new_command();
+  command_t cmd = new_command();
 
   run_command(&cmd);
 

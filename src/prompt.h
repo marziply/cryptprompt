@@ -5,7 +5,7 @@
 #define PROMPT_H 4
 #define PROMPT_W 64
 
-typedef struct Prompt Prompt;
+typedef struct Prompt prompt_t;
 
 struct Prompt {
   int x;
@@ -14,6 +14,6 @@ struct Prompt {
   WINDOW *input;
 };
 
-Prompt new_prompt();
+prompt_t new_prompt();
 
-void paint_prompt(Prompt *);
+void paint_prompt(prompt_t *);

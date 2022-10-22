@@ -6,9 +6,10 @@
 #define MAX_CHAR 126
 #define MAX_PASSWORD_LEN 80
 
-static const chtype BULLET = '*';
+static const char PASSWORD_CHAR = '*';
 
-typedef struct Command Command;
+typedef struct Command command_t;
+typedef struct Password password_t;
 
 struct Password {
   int len;
@@ -17,12 +18,12 @@ struct Password {
 
 struct Command {
   bool running;
-  Prompt prompt;
-  struct Password password;
+  prompt_t prompt;
+  password_t password;
 };
 
-Command new_command();
+command_t new_command();
 
-void run_command(Command *cmd);
+void run_command(command_t *cmd);
 
-void handle_key(Command *, int);
+void handle_key(command_t *, int);
