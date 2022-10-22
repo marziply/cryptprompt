@@ -35,4 +35,6 @@ prompt_t new_prompt();
 
 prompt_action_t handle_key(prompt_t *, int);
 
+bool tick_prompt(prompt_t *);
+
 void paint_prompt(prompt_t *);

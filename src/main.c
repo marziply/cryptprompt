@@ -1,4 +1,4 @@
-#include "cmd.h"
+#include "prompt.h"
 #include <ncurses.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,13 +24,17 @@ void init() {
 int main(int, char **) {
   init();
 
-  command_t cmd = new_command();
+  prompt_t prompt = new_prompt();
 
-  run_command(&cmd);
+  for (;;) {
+    if (!tick_prompt(&prompt)) {
+      break;
+    }
+  }
 
   endwin();
 
-  printf("%s\n", cmd.prompt.password.value);
+  printf("%s\n", prompt.password.value);
 
   return 0;
 }

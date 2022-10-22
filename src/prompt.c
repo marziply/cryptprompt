@@ -18,6 +18,26 @@ prompt_t new_prompt() {
   return prompt;
 }
 
+// Start the event loop, paint on each iteration, and handle any incoming
+// character key press
+bool tick_prompt(prompt_t *p) {
+  // Main command event loop
+  paint_prompt(p);
+
+  // Handle each character pressed
+  switch (handle_key(p, getch())) {
+  case PA_EXIT:
+    return false;
+  default:
+    break;
+  }
+
+  refresh();
+
+  return true;
+}
+
+// Paint the prompt window and prompt input
 void paint_prompt(prompt_t *p) {
   // Red foreground colour if max password length is reached
   /* int color_id = p->state->len == MAX_PASSWORD_LEN ? 2 : 1; */
@@ -34,10 +54,12 @@ void paint_prompt(prompt_t *p) {
   wrefresh(p->input);
 }
 
+// Is the password empty (zero elements)?
 bool is_password_empty(password_t *p) {
   return p->len == 0;
 }
 
+// Is the password length maxxed out?
 bool is_password_full(password_t *p) {
   return p->len == MAX_PASSWORD_LEN;
 }
@@ -52,14 +74,16 @@ void clear_password(WINDOW *input, password_t *pw) {
 // Removes the last key from the prompt and sets the last character in
 // password to NULL
 void del_key(WINDOW *input, password_t *pw) {
-  /* pw->len--; */
   pw->value[--pw->len] = '\0';
 
+  // Is the cursor at the start of the prompt?
   if (getcurx(input) == 0) {
+    // Add PASSWORD_CHAR to the whole line
     for (int i = 0; i < PROMPT_W - 3; i++) {
       mvwaddch(input, 0, i, PASSWORD_CHAR);
     }
   } else {
+    // Delete the last character from the end
     mvwdelch(input, getcury(input), getcurx(input) - 1);
   }
 }
