@@ -29,6 +29,7 @@ bool tick_prompt(prompt_t *p) {
   case PA_EXIT:
     return false;
   default:
+    // @TODO: Handle other event types
     break;
   }
 
@@ -37,14 +38,19 @@ bool tick_prompt(prompt_t *p) {
   return true;
 }
 
+// Red foreground colour if max password length is reached
+int select_password_color(password_t *p) {
+  int id = p->len == MAX_PASSWORD_LEN ? 2 : 1;
+
+  return COLOR_PAIR(id);
+}
+
 // Paint the prompt window and prompt input
 void paint_prompt(prompt_t *p) {
-  // Red foreground colour if max password length is reached
-  /* int color_id = p->state->len == MAX_PASSWORD_LEN ? 2 : 1; */
+  int password_color = select_password_color(&p->password);
 
   wbkgd(p->win, COLOR_PAIR(1));
-  /* wbkgd(p->input, COLOR_PAIR(color_id)); */
-  wbkgd(p->input, COLOR_PAIR(1));
+  wbkgd(p->input, password_color);
   wattron(p->input, A_BOLD);
 
   // Password prompt title
@@ -122,6 +128,7 @@ prompt_action_t handle_key(prompt_t *p, int key) {
       break;
     }
 
+    // Only handle key press if it is a valid alphanumeric
     if (key >= MIN_CHAR && key <= MAX_CHAR) {
       add_key(p->input, &p->password, (char *) &key);
 
