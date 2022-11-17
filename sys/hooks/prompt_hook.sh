@@ -30,7 +30,7 @@ run_prompt() {
   message="Password for $1 volume"
   command="/sbin/cryptsetup open $2 $1 $(crypt_args $3) $4"
 
-  plymouth ask-for-password --prompt $message --command $command
+  cryptprompt --message $message --command $command
 }
 
 run_hook() {

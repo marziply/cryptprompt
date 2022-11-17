@@ -3,6 +3,8 @@
 build() {
   add_dir /dev/pts
 
+  add_binary /usr/bin/cryptprompt
+
 	add_file /usr/lib/udev/rules.d/70-uaccess.rules
 	add_file /usr/lib/udev/rules.d/71-seat.rules
 
