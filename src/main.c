@@ -34,7 +34,7 @@ int main(int, char **) {
 
   endwin();
 
-  printf("%s\n", prompt.password.value);
+  printf("%s", prompt.password.value);
 
   return 0;
 }

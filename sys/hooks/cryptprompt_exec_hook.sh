@@ -34,9 +34,12 @@ run_prompt() {
 }
 
 run_hook() {
-  modprobe -a -q dm-crypt >/dev/null 2>&1
+  local IFS=":"
 
   dev_default="${root}:root"
+
+  modprobe -a -q dm-crypt >/dev/null 2>&1
+  read dev_uuid dev_name dev_opts <<< ${cryptdevice:-$dev_default}
 
   if [ "$quiet" = "y" ]; then
     quiet_arg=" >/dev/null"
@@ -45,8 +48,6 @@ run_hook() {
   if [ -z "$cryptdevice" ]; then
     dev_opt_missing=1
   fi
-
-  IFS=: read dev_uuid dev_name dev_opts <<< ${cryptdevice:-$dev_default}
 
   if dev_path=$(resolve_device $dev_uuid $rootdelay); then
     if cryptsetup isLuks ${dev_path} >/dev/null 2>&1; then
