@@ -1,14 +1,17 @@
 #include "prompt.h"
+#include <curses.h>
 #include <string.h>
+#include <stdlib.h>
 
 prompt_t new_prompt() {
   password_t password = { 0 };
   prompt_t prompt = (prompt_t) {
     (COLS / 2) - (PROMPT_W / 2),
     (LINES / 2) - (PROMPT_H / 2),
+    0,
+    password,
     subwin(stdscr, PROMPT_H, PROMPT_W, prompt.y, prompt.x),
     derwin(prompt.win, 1, PROMPT_W - 2, 2, 1),
-    password
   };
 
   // Move to prompt window (center of screen)
@@ -47,6 +50,8 @@ int select_password_color(password_t *p) {
 
 // Paint the prompt window and prompt input
 void paint_prompt(prompt_t *p) {
+  size_t parens = sizeof(char) * 2;
+  char *attempts = malloc(sizeof(p->attempts) + parens);
   int password_color = select_password_color(&p->password);
 
   wbkgd(p->win, COLOR_PAIR(1));
@@ -55,6 +60,16 @@ void paint_prompt(prompt_t *p) {
 
   // Password prompt title
   mvwaddstr(p->win, 1, 1, "Enter password");
+
+  if (p->attempts > 0) {
+    sprintf(attempts, "(%d)", p->attempts);
+
+    // wbkgd(p->win, COLOR_PAIR(2));
+    mvwaddstr(p->win, 1, strlen(TITLE) + 2, attempts);
+  }
+
+  wbkgd(p->win, COLOR_PAIR(1));
+  wmove(p->win, 2, p->password.len);
 
   wrefresh(p->win);
   wrefresh(p->input);
@@ -71,10 +86,14 @@ bool is_password_full(password_t *p) {
 }
 
 // Empty password->value and delete the visible asterisks
-void clear_password(WINDOW *input, password_t *pw) {
-  wdeleteln(input);
-  wmove(input, 0, 0);
-  memset(pw->value, 0, sizeof(pw->value));
+void clear_password(prompt_t *p) {
+  wdeleteln(p->input);
+  wmove(p->input, 0, 0);
+
+  wrefresh(p->win);
+  wrefresh(p->input);
+
+  p->password = (password_t) { 0 };
 }
 
 // Removes the last key from the prompt and sets the last character in
@@ -120,7 +139,7 @@ prompt_action_t handle_key(prompt_t *p, int key) {
     return PA_DELETE;
   // CTRL+U
   case 0x15:
-    clear_password(p->input, &p->password);
+    clear_password(p);
     break;
   default:
     if (is_password_full(&p->password)) {

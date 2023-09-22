@@ -6,6 +6,7 @@
 #define MAX_CHAR 126
 #define MAX_PASSWORD_LEN 80
 #define PASSWORD_CHAR '*'
+#define TITLE "Enter password"
 
 typedef struct Password password_t;
 typedef struct Prompt prompt_t;
@@ -20,15 +21,16 @@ enum PromptAction {
 
 struct Password {
   int len;
-  char value[MAX_PASSWORD_LEN];
+  char value[MAX_PASSWORD_LEN + 1];
 };
 
 struct Prompt {
   int x;
   int y;
+  int attempts;
+  password_t password;
   WINDOW *win;
   WINDOW *input;
-  password_t password;
 };
 
 prompt_t new_prompt();
@@ -38,3 +40,5 @@ prompt_action_t handle_key(prompt_t *, int);
 bool tick_prompt(prompt_t *);
 
 void paint_prompt(prompt_t *);
+
+void clear_password(prompt_t *);
