@@ -8,6 +8,8 @@
 #define PASSWORD_CHAR '*'
 #define TITLE "Enter password"
 
+typedef struct _win_st win_t;
+typedef struct crypt_device crypt_dev_t;
 typedef struct Password password_t;
 typedef struct Prompt prompt_t;
 typedef enum PromptAction prompt_action_t;
@@ -29,8 +31,8 @@ struct Prompt {
   int y;
   int attempts;
   password_t password;
-  WINDOW *win;
-  WINDOW *input;
+  win_t *win;
+  win_t *input;
 };
 
 prompt_t new_prompt();
@@ -42,3 +44,7 @@ bool tick_prompt(prompt_t *);
 void paint_prompt(prompt_t *);
 
 void clear_password(prompt_t *);
+
+void show_activity_sign(prompt_t *);
+
+void incremement_attempts(prompt_t *);

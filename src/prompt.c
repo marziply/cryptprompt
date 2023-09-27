@@ -98,7 +98,7 @@ void clear_password(prompt_t *p) {
 
 // Removes the last key from the prompt and sets the last character in
 // password to NULL
-void del_key(WINDOW *input, password_t *pw) {
+void del_key(win_t *input, password_t *pw) {
   pw->value[--pw->len] = '\0';
 
   // Is the cursor at the start of the prompt?
@@ -114,11 +114,26 @@ void del_key(WINDOW *input, password_t *pw) {
 }
 
 // Adds the pressed key character to the password
-void add_key(WINDOW *input, password_t *pw, char *key) {
+void add_key(win_t *input, password_t *pw, char *key) {
   pw->len++;
 
   waddch(input, PASSWORD_CHAR);
   strncat(pw->value, key, 1);
+}
+
+void show_activity_sign(prompt_t *p) {
+  mvwaddstr(p->win, 1, PROMPT_W - 5, "[*]");
+  wmove(p->win, 2, 1);
+  wrefresh(p->win);
+}
+
+void incremement_attempts(prompt_t *p) {
+  p->attempts++;
+
+  clear_password(p);
+
+  wmove(p->win, 1, 0);
+  wdeleteln(p->win);
 }
 
 prompt_action_t handle_key(prompt_t *p, int key) {

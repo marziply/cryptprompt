@@ -4,11 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <libcryptsetup.h>
 
 #define KEY_FILE "/tmp/key"
-#define SILENT "> /dev/null 2>&1"
 
-void init() {
+void window_init() {
   // Colours
   start_color();
   init_pair(1, COLOR_BLACK, COLOR_WHITE);
@@ -25,7 +25,18 @@ void init() {
   box(stdscr, 0, 0);
 }
 
-int main(int argc, char **argv) {
+int unlock(prompt_t *p, char *name, crypt_dev_t *cd) {
+  return crypt_activate_by_passphrase(
+    cd,
+    name,
+    CRYPT_ANY_SLOT,
+    p->password.value,
+    p->password.len,
+    0
+  );
+}
+
+int main(int, char **argv) {
   if (getuid()) {
     printf("Execute as root to continue\n");
 
@@ -35,55 +46,39 @@ int main(int argc, char **argv) {
   FILE *tty = fopen("/dev/tty", "w");
   FILE *target = tty ? tty : stdout;
 
-  char *base_cmd = "/sbin/cryptsetup open -d /tmp/key --test-passphrase";
-  char *setup_cmd = malloc(strlen(base_cmd) + strlen(SILENT) + sizeof(argv));
+  crypt_dev_t *cd = NULL;
+  char *dev = argv[1];
+  char *name = argv[2];
+
+  if (!dev) {
+    printf("Missing device parameter\n");
+
+    return 1;
+  }
+
+  crypt_init(&cd, dev);
+  crypt_load(cd, CRYPT_LUKS2, NULL);
 
   newterm(getenv("TERM"), target, stdin);
-
-  init();
+  window_init();
 
   prompt_t prompt = new_prompt();
 
-  strcat(setup_cmd, base_cmd);
-
-  for (int i = 1; i < argc; i++) {
-    strcat(setup_cmd, " ");
-    strcat(setup_cmd, argv[i]);
-  }
-
-  strcat(setup_cmd, SILENT);
-
   for (;;) {
-    if (!tick_prompt(&prompt)) {
-      FILE *key = fopen(KEY_FILE, "w");
-
-      fprintf(key, "%s", prompt.password.value);
-      fclose(key);
-
-      clear_password(&prompt);
-
-      mvwaddstr(prompt.win, 1, PROMPT_W - 5, "[*]");
-      wmove(prompt.win, 2, 1);
-      wrefresh(prompt.win);
-
-      if (system(setup_cmd) == 0) {
-        remove(KEY_FILE);
-
-        break;
-      }
-
-      prompt.attempts++;
-
-      wmove(prompt.win, 1, 0);
-      wdeleteln(prompt.win);
-
-      remove(KEY_FILE);
+    if (tick_prompt(&prompt)) {
+      continue;
     }
+
+    show_activity_sign(&prompt);
+
+    if (unlock(&prompt, name, cd) >= 0) {
+      break;
+    }
+
+    incremement_attempts(&prompt);
   }
 
   endwin();
-
-  // printf("%s", prompt.password.value);
 
   return 0;
 }

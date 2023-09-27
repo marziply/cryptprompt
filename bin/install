@@ -5,13 +5,14 @@ build() {
 
   if [[ $CRYPTO_MODULES ]]; then
     for mod in $CRYPTO_MODULES; do
-      add_module "$mod"
+      add_module $mod
     done
   else
     add_all_modules "/crypto/"
   fi
 
   add_binary "cryptsetup"
+  add_binary "cryptprompt"
   add_binary "dmsetup"
 
   add_file "/usr/lib/udev/rules.d/10-dm.rules"

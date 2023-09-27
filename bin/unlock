@@ -1,0 +1,119 @@
+#!/usr/bin/bash
+
+unlock() {
+  local crypt_name="$1"
+  local crypt_args="$2"
+  local key_file="$3"
+  local prompt_for_password=1
+
+  unlock_with_key() {
+    /sbin/cryptsetup open \
+      -d $key_file \
+      $target_dev \
+      $crypt_name \
+      $crypt_args
+  }
+
+  if ! target_dev=`resolve_device $crypt_dev $rootdelay`; then
+    return
+  fi
+
+  if ! /sbin/cryptsetup isLuks $target_dev > /dev/null 2>&1; then
+    return
+  fi
+
+  if [[ -f $key_file ]]; then
+    if open_device -d $key_file; then
+      local prompt_for_password=0
+    else
+      echo "Invalid key file, enter password to continue"
+    fi
+  fi
+
+  if [[ $prompt_for_password -gt 0 ]]; then
+    /bin/cryptprompt $target_dev $crypt_name $crypt_args
+  fi
+
+  if [[ ! -e "/dev/mapper/${crypt_name}" ]]; then
+    err "Password succeeded, but ${crypt_name} creation failed, aborting"
+
+    exit 1
+  fi
+}
+
+mount_key_file() {
+  local key_file="$1"
+  local key_mount_dir="/kmnt"
+  local key_dev=`echo $cryptkey | cut -d : -f1`
+  local key_arg1=`echo $cryptkey | cut -d : -f2`
+  local key_arg2=`echo $cryptkey | cut -d : -f3`
+
+  if poll_device $key_dev $rootdelay; then
+    case $key_arg1 in
+      *[!0-9]*)
+        mkdir $key_mount_dir
+        mount -rt $key_arg1 $key_dev $key_mount_dir
+        dd if="${key_mount_dir}/${key_arg2}" of=$key_file
+        umount $key_mount_dir
+      ;;
+      *)
+        dd \
+          if=$key_dev \
+          of=$key_file \
+          skip=$key_arg1 \
+          count=$key_arg2 \
+          bs=1 \
+          > /dev/null 2>&1
+      ;;
+    esac
+  fi
+
+  if [[ ! -f $key_file ]]; then
+    echo "Key file could not be opened, enter password to continue"
+  fi
+}
+
+run_hook() {
+  /sbin/modprobe -aq dm-crypt > /dev/null 2>&1
+
+  local key_file="/key.bin"
+  local sys_mapper_dir="/sys/class/misc/device-mapper"
+  local crypt_args=$cryptargs
+  local crypt_dev=`echo $cryptdevice | cut -d : -f1`
+  local crypt_name=`echo $cryptdevice | cut -d : -f2`
+  local crypt_opts=`echo $cryptdevice | cut -d : -f3`
+
+  if [[ ! -e $sys_mapper_dir ]]; then
+    return
+  fi
+
+  if [[ ! -e /dev/mapper/control ]]; then
+    mkdir /dev/mapper
+    mknod /dev/mapper/control c `cat "${sys_mapper_dir}/dev" | sed 's/:/ /'`
+  fi
+
+  if [[ "$quiet" == "y" ]]; then
+    local crypt_args="${crypt_args} > /dev/null"
+  fi
+
+  if [[ -n "$cryptkey" ]]; then
+    mount_key_file $key_file
+  fi
+
+  for opt in `echo $crypt_opts | tr ',' ' '`; do
+    case $opt in
+      allow-discards)
+        echo "Enabled TRIM"
+
+        local crypt_args="${crypt_args} --allow-discards"
+      ;;
+      *)
+        echo "Encryption option '${opt}' not known, ignoring"
+      ;;
+    esac
+  done
+
+  unlock $crypt_name $crypt_args $key_file
+
+  rm -rf /.done $key_file
+}
