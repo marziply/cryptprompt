@@ -23,7 +23,7 @@ unlock() {
   fi
 
   if [[ -f $key_file ]]; then
-    if open_device -d $key_file; then
+    if unlock_with_key -d $key_file; then
       local prompt_for_password=0
     else
       echo "Invalid key file, enter password to continue"
