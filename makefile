@@ -22,7 +22,6 @@ install: uninstall $(EXE)
 	@cp ./$(EXE) $(INSTALL_DIR)/$(EXE)
 	@cp ./bin/unlock $(INITCPIO_DIR)/hooks/unlock
 	@cp ./bin/install $(INITCPIO_DIR)/install/unlock
-	@mkinitcpio -P
 
 uninstall:
 	@rm -rf $(INSTALL_DIR)/$(EXE)
