@@ -31,7 +31,7 @@ unlock() {
   fi
 
   if [[ $prompt_for_password -gt 0 ]]; then
-    /bin/cryptprompt $target_dev $crypt_name $crypt_args
+    /sbin/cryptprompt $target_dev $crypt_name $crypt_args
   fi
 
   if [[ ! -e "/dev/mapper/${crypt_name}" ]]; then
