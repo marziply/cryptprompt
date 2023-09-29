@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/ash
 
 unlock() {
   local crypt_name="$1"
@@ -81,7 +81,6 @@ run_hook() {
   local crypt_args=$cryptargs
   local crypt_dev=`echo $cryptdevice | cut -d : -f1`
   local crypt_name=`echo $cryptdevice | cut -d : -f2`
-  local crypt_opts=`echo $cryptdevice | cut -d : -f3`
 
   if [[ ! -e $sys_mapper_dir ]]; then
     return
@@ -99,19 +98,6 @@ run_hook() {
   if [[ -n "$cryptkey" ]]; then
     mount_key_file $key_file
   fi
-
-  for opt in `echo $crypt_opts | tr ',' ' '`; do
-    case $opt in
-      allow-discards)
-        echo "Enabled TRIM"
-
-        local crypt_args="${crypt_args} --allow-discards"
-      ;;
-      *)
-        echo "Encryption option '${opt}' not known, ignoring"
-      ;;
-    esac
-  done
 
   unlock $crypt_name $crypt_args $key_file
 

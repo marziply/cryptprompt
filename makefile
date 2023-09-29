@@ -4,7 +4,7 @@ FLAGS = -std=c2x -c -g -Wall
 LIBS = -lncurses -lcryptsetup
 BUILD_DIR = ./build
 INSTALL_DIR = /usr/bin
-INITCPIO_DIR = /etc/initcpio
+INITCPIO_DIR = /usr/lib/initcpio
 SOURCES = $(wildcard src/*.c)
 OBJECTS = $(patsubst src/%.c,build/%.o,$(SOURCES))
 
