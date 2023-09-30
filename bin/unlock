@@ -6,12 +6,12 @@ unlock() {
   local key_file="$3"
   local prompt_for_password=1
 
-  unlock_with_key() {
+  crypt_open() {
     /sbin/cryptsetup open \
-      -d $key_file \
       $target_dev \
       $crypt_name \
-      $crypt_args
+      $crypt_args \
+      $@
   }
 
   if ! target_dev=`resolve_device $crypt_dev $rootdelay`; then
@@ -23,15 +23,25 @@ unlock() {
   fi
 
   if [[ -f $key_file ]]; then
-    if unlock_with_key -d $key_file; then
+    if crypt_open -d $key_file; then
       local prompt_for_password=0
     else
-      echo "Invalid key file, enter password to continue"
+      err "Invalid key file, enter password to continue"
     fi
   fi
 
   if [[ $prompt_for_password -gt 0 ]]; then
-    /sbin/cryptprompt $target_dev $crypt_name $crypt_args
+    if ! /sbin/cryptprompt $target_dev $crypt_name $crypt_args; then
+      if [[ ! -f /.done ]]; then
+        err "Interface failure, dropping to manual prompt"
+
+        while ! crypt_open; do
+          if [[ -f /.done ]]; then
+            break
+          fi
+        done
+      fi
+    fi
   fi
 
   if [[ ! -e "/dev/mapper/${crypt_name}" ]]; then

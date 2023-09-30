@@ -47,4 +47,4 @@ void clear_password(prompt_t *);
 
 void show_activity_sign(prompt_t *);
 
-void incremement_attempts(prompt_t *);
+void inc_attempts(prompt_t *);

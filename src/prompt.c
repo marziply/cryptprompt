@@ -127,7 +127,7 @@ void show_activity_sign(prompt_t *p) {
   wrefresh(p->win);
 }
 
-void incremement_attempts(prompt_t *p) {
+void inc_attempts(prompt_t *p) {
   p->attempts++;
 
   clear_password(p);

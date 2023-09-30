@@ -1,5 +1,15 @@
 #!/bin/bash
 
+cshell="/bin/cshell"
+rules_dir="/usr/lib/udev/rules.d"
+
+make_etc_passwd() {
+  local etc_dir="${BUILDROOT}/etc"
+
+  echo "root:x:0:0:root:/root:${cshell}" > "${etc_dir}/passwd"
+  echo $cshell > "${etc_dir}/shells"
+}
+
 build() {
   add_module dm-crypt
 
@@ -15,14 +25,20 @@ build() {
   add_binary "cryptprompt"
   add_binary "dmsetup"
 
-  add_file "/usr/lib/udev/rules.d/10-dm.rules"
-  add_file "/usr/lib/udev/rules.d/13-dm-disk.rules"
-  add_file "/usr/lib/udev/rules.d/95-dm-notify.rules"
+  add_file "${rules_dir}/10-dm.rules"
+  add_file "${rules_dir}/13-dm-disk.rules"
+  add_file "${rules_dir}/95-dm-notify.rules"
   add_file \
     "/usr/lib/initcpio/udev/11-dm-initramfs.rules" \
-    "/usr/lib/udev/rules.d/11-dm-initramfs.rules"
+    "${rules_dir}/11-dm-initramfs.rules"
+
+  add_binary \
+    "/usr/share/mkinitcpio-utils/utils/shells/cryptsetup_shell" \
+    $cshell
 
   add_binary "/usr/lib/libgcc_s.so.1"
+
+  make_etc_passwd
 
   add_runscript
 }

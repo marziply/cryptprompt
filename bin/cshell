@@ -1,0 +1,15 @@
+#!/bin/sh
+
+if [[ -c "/dev/mapper/control" ]]; then
+  dev=`cat /.cryptdev`
+  name=`cat /.cryptname`
+  args=`cat /.cryptargs`
+
+  if /sbin/cryptsetup open $dev $name $args; then
+    touch /.done
+
+    killall cryptsetup cryptprompt
+  fi
+else
+  echo "Login failed"
+fi

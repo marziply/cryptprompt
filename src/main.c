@@ -8,7 +8,7 @@
 
 #define KEY_FILE "/tmp/key"
 
-void window_init() {
+void win_init() {
   // Colours
   start_color();
   init_pair(1, COLOR_BLACK, COLOR_WHITE);
@@ -25,15 +25,27 @@ void window_init() {
   box(stdscr, 0, 0);
 }
 
-int unlock(prompt_t *p, char *name, crypt_dev_t *cd) {
+int unlock(prompt_t *p, char *name, crypt_dev_t *cdev) {
   return crypt_activate_by_passphrase(
-    cd,
+    cdev,
     name,
     CRYPT_ANY_SLOT,
     p->password.value,
     p->password.len,
     0
   );
+}
+
+bool attempt(prompt_t *p, char *name, crypt_dev_t *cdev) {
+  show_activity_sign(p);
+
+  if (unlock(p, name, cdev) >= 0) {
+    return true;
+  }
+
+  inc_attempts(p);
+
+  return false;
 }
 
 int main(int, char **argv) {
@@ -43,10 +55,12 @@ int main(int, char **argv) {
     return 1;
   }
 
-  FILE *tty = fopen("/dev/tty", "w");
-  FILE *target = tty ? tty : stdout;
+  FILE *maybe_tty = fopen("/dev/tty", "w");
+  FILE *maybe_tty0 = maybe_tty ? maybe_tty : fopen("/dev/tty0", "w");
+  FILE *maybe_fb0 = maybe_tty0 ? maybe_tty0 : fopen("/dev/fb0", "w");
+  FILE *out = maybe_fb0 ? maybe_fb0 : stdout;
 
-  crypt_dev_t *cd = NULL;
+  crypt_dev_t *cdev = NULL;
   char *dev = argv[1];
   char *name = argv[2];
 
@@ -56,26 +70,32 @@ int main(int, char **argv) {
     return 1;
   }
 
-  crypt_init(&cd, dev);
-  crypt_load(cd, CRYPT_LUKS2, NULL);
+  if (!out) {
+    printf("Target tty unreachable\n");
 
-  newterm(getenv("TERM"), target, stdin);
-  window_init();
+    return 1;
+  }
+
+  crypt_init(&cdev, dev);
+  crypt_load(cdev, CRYPT_LUKS2, NULL);
+
+  newterm(getenv("TERM"), out, stdin);
+  win_init();
 
   prompt_t prompt = new_prompt();
 
   for (;;) {
+    if (access("/.done", F_OK) == 0) {
+      break;
+    }
+
     if (tick_prompt(&prompt)) {
       continue;
     }
 
-    show_activity_sign(&prompt);
-
-    if (unlock(&prompt, name, cd) >= 0) {
+    if (attempt(&prompt, name, cdev)) {
       break;
     }
-
-    incremement_attempts(&prompt);
   }
 
   endwin();
