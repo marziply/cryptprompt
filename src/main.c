@@ -55,10 +55,8 @@ int main(int, char **argv) {
     return 1;
   }
 
-  FILE *maybe_tty = fopen("/dev/tty", "w");
-  FILE *maybe_tty0 = maybe_tty ? maybe_tty : fopen("/dev/tty0", "w");
-  FILE *maybe_fb0 = maybe_tty0 ? maybe_tty0 : fopen("/dev/fb0", "w");
-  FILE *out = maybe_fb0 ? maybe_fb0 : stdout;
+  FILE *tty = fopen("/dev/console", "w");
+  FILE *out = tty ? tty : stdout;
 
   crypt_dev_t *cdev = NULL;
   char *dev = argv[1];

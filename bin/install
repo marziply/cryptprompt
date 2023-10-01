@@ -18,23 +18,19 @@ build() {
       add_module $mod
     done
   else
-    add_all_modules "/crypto/"
+    add_all_modules /crypto/
   fi
 
-  add_binary "cryptsetup"
-  add_binary "cryptprompt"
-  add_binary "dmsetup"
+  add_binary cryptsetup
+  add_binary cryptprompt
+  add_binary dmsetup
 
   add_file "${rules_dir}/10-dm.rules"
   add_file "${rules_dir}/13-dm-disk.rules"
   add_file "${rules_dir}/95-dm-notify.rules"
-  add_file \
-    "/usr/lib/initcpio/udev/11-dm-initramfs.rules" \
-    "${rules_dir}/11-dm-initramfs.rules"
+  add_file /usr/lib/initcpio/udev/11-dm-initramfs.rules $rules_dir
 
-  add_binary \
-    "/usr/share/mkinitcpio-utils/utils/shells/cryptsetup_shell" \
-    $cshell
+  add_binary /usr/share/cryptprompt/cshell $cshell
 
   add_binary "/usr/lib/libgcc_s.so.1"
 

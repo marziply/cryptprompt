@@ -22,6 +22,10 @@ unlock() {
     return
   fi
 
+  echo $crypt_args > /.cryptargs
+  echo $crypt_name > /.cryptname
+  echo $target_dev > /.cryptdev
+
   if [[ -f $key_file ]]; then
     if crypt_open -d $key_file; then
       local prompt_for_password=0
@@ -111,5 +115,5 @@ run_hook() {
 
   unlock $crypt_name $crypt_args $key_file
 
-  rm -rf /.done $key_file
+  rm -rf /.done /.cryptname /.cryptdev /.cryptargs $key_file
 }
