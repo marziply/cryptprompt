@@ -1,12 +1,10 @@
 #!/bin/sh
 
 if [[ -c "/dev/mapper/control" ]]; then
-  dev=`cat /.cryptdev`
-  name=`cat /.cryptname`
-  args=`cat /.cryptargs`
+  params=(`cat /tmp/unlock/params`)
 
-  if /sbin/cryptsetup open $dev $name $args; then
-    touch /.done
+  if /sbin/cryptsetup open ${params[@]}; then
+    touch /tmp/unlock/done
 
     killall cryptsetup cryptprompt
   fi

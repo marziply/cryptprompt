@@ -55,7 +55,7 @@ int main(int, char **argv) {
     return 1;
   }
 
-  FILE *tty = fopen("/dev/console", "w");
+  FILE *tty = fopen("/dev/tty", "w");
   FILE *out = tty ? tty : stdout;
 
   crypt_dev_t *cdev = NULL;
@@ -83,7 +83,7 @@ int main(int, char **argv) {
   prompt_t prompt = new_prompt();
 
   for (;;) {
-    if (access("/.done", F_OK) == 0) {
+    if (access("/tmp/unlock/done", F_OK) == 0) {
       break;
     }
 

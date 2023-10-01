@@ -1,10 +1,31 @@
 #!/usr/bin/ash
 
+log() {
+  local message="$1"
+
+  echo $message
+  echo $message >> /var/log/unlock.log
+}
+
+log_and_exit() {
+  log $1
+
+  exit 1
+}
+
+cut_list() {
+  for i in `seq $2`; do
+    echo $1 | cut -d : -f${i}
+  done
+}
+
 unlock() {
-  local crypt_name="$1"
-  local crypt_args="$2"
-  local key_file="$3"
+  local crypt_dev="$1"
+  local crypt_name="$2"
+  local crypt_args="$3"
+  local key_file="$4"
   local prompt_for_password=1
+  local target_dev=`resolve_device $crypt_dev $rootdelay`
 
   crypt_open() {
     /sbin/cryptsetup open \
@@ -14,33 +35,31 @@ unlock() {
       $@
   }
 
-  if ! target_dev=`resolve_device $crypt_dev $rootdelay`; then
-    return
+  if [[ -z "$target_dev" ]]; then
+    log_and_exit "Target device could not be found"
   fi
 
   if ! /sbin/cryptsetup isLuks $target_dev > /dev/null 2>&1; then
-    return
+    log_and_exit "Target device is not LUKS encrypted"
   fi
 
-  echo $crypt_args > /.cryptargs
-  echo $crypt_name > /.cryptname
-  echo $target_dev > /.cryptdev
+  echo "${crypt_args}:${crypt_name}:${target_dev}" > /tmp/unlock/params
 
   if [[ -f $key_file ]]; then
     if crypt_open -d $key_file; then
       local prompt_for_password=0
     else
-      err "Invalid key file, enter password to continue"
+      log "Invalid key file, enter password to continue"
     fi
   fi
 
   if [[ $prompt_for_password -gt 0 ]]; then
     if ! /sbin/cryptprompt $target_dev $crypt_name $crypt_args; then
-      if [[ ! -f /.done ]]; then
-        err "Interface failure, dropping to manual prompt"
+      if [[ ! -f /tmp/unlock/done ]]; then
+        log "Interface failure, dropping to manual prompt"
 
         while ! crypt_open; do
-          if [[ -f /.done ]]; then
+          if [[ -f /tmp/unlock/done ]]; then
             break
           fi
         done
@@ -49,33 +68,29 @@ unlock() {
   fi
 
   if [[ ! -e "/dev/mapper/${crypt_name}" ]]; then
-    err "Password succeeded, but ${crypt_name} creation failed, aborting"
-
-    exit 1
+    log_and_exit "Password succeeded but ${crypt_name} creation failed"
   fi
 }
 
 mount_key_file() {
   local key_file="$1"
   local key_mount_dir="/kmnt"
-  local key_dev=`echo $cryptkey | cut -d : -f1`
-  local key_arg1=`echo $cryptkey | cut -d : -f2`
-  local key_arg2=`echo $cryptkey | cut -d : -f3`
+  local key_args=(`cut_list $cryptkey 3`)
 
-  if poll_device $key_dev $rootdelay; then
-    case $key_arg1 in
+  if poll_device ${key_args[1]} $rootdelay; then
+    case ${key_args[2]} in
       *[!0-9]*)
         mkdir $key_mount_dir
-        mount -rt $key_arg1 $key_dev $key_mount_dir
-        dd if="${key_mount_dir}/${key_arg2}" of=$key_file
+        mount -rt ${key_args[2]} ${key_args[1]} $key_mount_dir
+        dd if="${key_mount_dir}/${key_args[3]}" of=$key_file
         umount $key_mount_dir
       ;;
       *)
         dd \
-          if=$key_dev \
           of=$key_file \
-          skip=$key_arg1 \
-          count=$key_arg2 \
+          if=${key_args[1]} \
+          skip=${key_args[2]} \
+          count=${key_args[3]} \
           bs=1 \
           > /dev/null 2>&1
       ;;
@@ -83,7 +98,7 @@ mount_key_file() {
   fi
 
   if [[ ! -f $key_file ]]; then
-    echo "Key file could not be opened, enter password to continue"
+    log "Key file could not be opened, enter password to continue"
   fi
 }
 
@@ -91,18 +106,18 @@ run_hook() {
   /sbin/modprobe -aq dm-crypt > /dev/null 2>&1
 
   local key_file="/key.bin"
-  local sys_mapper_dir="/sys/class/misc/device-mapper"
+  local mapper_dir="/sys/class/misc/device-mapper"
+  local crypt_params=(`cut_list $cryptdevice 2`)
   local crypt_args=$cryptargs
-  local crypt_dev=`echo $cryptdevice | cut -d : -f1`
-  local crypt_name=`echo $cryptdevice | cut -d : -f2`
 
-  if [[ ! -e $sys_mapper_dir ]]; then
-    return
+  mkdir -p /dev/mapper /tmp/unlock
+
+  if [[ ! -e $mapper_dir ]]; then
+    log_and_exit "Device mapper directory not found"
   fi
 
   if [[ ! -e /dev/mapper/control ]]; then
-    mkdir /dev/mapper
-    mknod /dev/mapper/control c `cat "${sys_mapper_dir}/dev" | sed 's/:/ /'`
+    mknod /dev/mapper/control c `cat "${mapper_dir}/dev" | sed 's/:/ /'`
   fi
 
   if [[ "$quiet" == "y" ]]; then
@@ -113,7 +128,7 @@ run_hook() {
     mount_key_file $key_file
   fi
 
-  unlock $crypt_name $crypt_args $key_file
+  unlock ${crypt_params[@]} $crypt_args $key_file
 
-  rm -rf /.done /.cryptname /.cryptdev /.cryptargs $key_file
+  rm -rf /tmp/unlock $key_file
 }
